@@ -36,11 +36,28 @@ module avalon_s_arbiter #(
     input                       device_avn_waitrequest
 );
 
+    // ------------------------------
+    // Sginal Declaration
+    // ------------------------------
 
     logic [NH-1:0]      hosts_grant;
     logic [NH-1:0]      hosts_request;
 
-    assign hosts_grant = hosts_avn_read | hosts_avn_write;
+    /* verilator lint_off UNOPT */
+    logic [AW-1:0]      device_avn_address_temp;
+    logic [DW/8-1:0]    device_avn_byte_enable_temp;
+    logic [DW-1:0]      device_avn_writedata_temp;
+    /* verilator lint_off UNOPT */
+
+    // ------------------------------
+    // Main logic
+    // ------------------------------
+
+    assign hosts_request = hosts_avn_read | hosts_avn_write;
+
+    assign device_avn_address = device_avn_address_temp;
+    assign device_avn_byte_enable = device_avn_byte_enable_temp;
+    assign device_avn_writedata = device_avn_writedata_temp;
 
     genvar i;
     generate
@@ -48,20 +65,28 @@ module avalon_s_arbiter #(
             // connect output to input
             assign hosts_avn_readdata[i] = device_avn_readdata;
             assign hosts_avn_waitrequest[i] = device_avn_waitrequest;
-
             assign device_avn_read = |(hosts_grant & hosts_avn_read);
             assign device_avn_write = |(hosts_grant & hosts_avn_write);
-            assign device_avn_address = device_avn_address | (hosts_avn_address[i] & {AW{hosts_grant[i]}});
-            assign device_avn_writedata = device_avn_writedata | (hosts_avn_writedata[i] & {AW{hosts_grant[i]}});
-            assign device_avn_byte_enable = device_avn_byte_enable | (hosts_avn_byte_enable[i] & {(DW/8){hosts_grant[i]}});
         end
-
     endgenerate
+
+    integer j;
+    always @* begin
+        for (j = 0; j < NH; j++) begin
+            device_avn_address_temp = device_avn_address_temp | (hosts_avn_address[j] & {AW{hosts_grant[j]}});
+            device_avn_writedata_temp = device_avn_writedata_temp | (hosts_avn_writedata[j] & {AW{hosts_grant[j]}});
+            device_avn_byte_enable_temp = device_avn_byte_enable_temp | (hosts_avn_byte_enable[j] & {(DW/8){hosts_grant[j]}});
+        end
+    end
+
+    // ------------------------------
+    // Module initialization
+    // ------------------------------
 
     bus_arbiter #(.WIDTH(NH))
     u_bus_arbiter (
         .req    (hosts_request),
-        .base   ('1),
+        .base   ('b1),
         .grant  (hosts_grant)
     );
 

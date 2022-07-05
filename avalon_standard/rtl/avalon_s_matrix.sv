@@ -42,6 +42,10 @@ module avalon_s_matrix #(
     input  [ND-1:0][AW-1:0]     devices_address_high
 );
 
+    // ------------------------------
+    // Signal Declaration
+    // ------------------------------
+
     logic [NH-1:0][ND-1:0]             decoder_avn_read;
     logic [NH-1:0][ND-1:0]             decoder_avn_write;
     logic [NH-1:0][ND-1:0][AW-1:0]     decoder_avn_address;
@@ -58,6 +62,10 @@ module avalon_s_matrix #(
     logic [ND-1:0][NH-1:0][DW-1:0]     arbiter_avn_readdata;
     logic [ND-1:0][NH-1:0]             arbiter_avn_waitrequest;
 
+    // ------------------------------
+    // Main logic
+    // ------------------------------
+
     genvar i, j;
     generate
         for (i = 0; i < ND; i++) begin  // device
@@ -67,8 +75,9 @@ module avalon_s_matrix #(
                 assign arbiter_avn_address[i][j]      = decoder_avn_address[j][i];
                 assign arbiter_avn_byte_enable[i][j]  = decoder_avn_byte_enable[j][i];
                 assign arbiter_avn_writedata[i][j]    = decoder_avn_writedata[j][i];
-                assign arbiter_avn_readdata[i][j]     = decoder_avn_readdata[j][i];
-                assign arbiter_avn_waitrequest[i][j]  = decoder_avn_waitrequest[j][i];
+
+                assign decoder_avn_readdata[i][j]     = arbiter_avn_readdata[j][i];
+                assign decoder_avn_waitrequest[i][j]  = arbiter_avn_waitrequest[j][i];
             end
         end
     endgenerate
@@ -103,25 +112,25 @@ module avalon_s_matrix #(
 
     genvar d;
     generate
-        for (d = 0; d < NH; d++) begin: host_decode
+        for (d = 0; d < NH; d++) begin: host_arbiter
             avalon_s_arbiter #(.NH(NH), .DW(DW), .AW (AW))
-            avalon_s_arbiter (
+            u_avalon_s_arbiter (
                 .clk                        (clk),
                 .rst                        (rst),
-                .hosts_avn_read             (arbiter_avn_read[h]),
-                .hosts_avn_write            (arbiter_avn_write[h]),
-                .hosts_avn_address          (arbiter_avn_address[h]),
-                .hosts_avn_byte_enable      (arbiter_avn_byte_enable[h]),
-                .hosts_avn_writedata        (arbiter_avn_writedata[h]),
-                .hosts_avn_readdata         (arbiter_avn_readdata[h]),
-                .hosts_avn_waitrequest      (arbiter_avn_waitrequest[h]),
-                .device_avn_read            (devices_avn_read[h]),
-                .device_avn_write           (devices_avn_write[h]),
-                .device_avn_address         (devices_avn_address[h]),
-                .device_avn_byte_enable     (devices_avn_byte_enable[h]),
-                .device_avn_writedata       (devices_avn_writedata[h]),
-                .device_avn_readdata        (devices_avn_readdata[h]),
-                .device_avn_waitrequest     (devices_avn_waitrequest[h])
+                .hosts_avn_read             (arbiter_avn_read[d]),
+                .hosts_avn_write            (arbiter_avn_write[d]),
+                .hosts_avn_address          (arbiter_avn_address[d]),
+                .hosts_avn_byte_enable      (arbiter_avn_byte_enable[d]),
+                .hosts_avn_writedata        (arbiter_avn_writedata[d]),
+                .hosts_avn_readdata         (arbiter_avn_readdata[d]),
+                .hosts_avn_waitrequest      (arbiter_avn_waitrequest[d]),
+                .device_avn_read            (devices_avn_read[d]),
+                .device_avn_write           (devices_avn_write[d]),
+                .device_avn_address         (devices_avn_address[d]),
+                .device_avn_byte_enable     (devices_avn_byte_enable[d]),
+                .device_avn_writedata       (devices_avn_writedata[d]),
+                .device_avn_readdata        (devices_avn_readdata[d]),
+                .device_avn_waitrequest     (devices_avn_waitrequest[d])
             );
     end
     endgenerate

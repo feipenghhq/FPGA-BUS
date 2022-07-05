@@ -41,9 +41,23 @@ module avalon_s_decoder #(
     input  [ND-1:0][AW-1:0]     devices_address_high
 );
 
+    // ------------------------------
+    // Sginal Declaration
+    // ------------------------------
+
     logic [ND-1:0]  devices_hit;
     reg   [ND-1:0]  prev_devices_hit;
 
+    /* verilator lint_off UNOPT */
+    logic [DW-1:0]  host_avn_readdata_temp;
+    /* verilator lint_on UNOPT */
+
+    // ------------------------------
+    // Main logic
+    // ------------------------------
+
+    assign host_avn_readdata = host_avn_readdata_temp;
+    assign host_avn_waitrequest = |(devices_avn_waitrequest & devices_hit);
 
     genvar i;
     generate
@@ -57,16 +71,21 @@ module avalon_s_decoder #(
             assign devices_avn_address[i] = host_avn_address;
             assign devices_avn_byte_enable[i] = host_avn_byte_enable;
             assign devices_avn_writedata[i] = host_avn_writedata;
-
-            assign host_avn_readdata = host_avn_readdata | (devices_avn_readdata[i] & {DW{prev_devices_hit[i]}});
         end
     endgenerate
+
+    integer j;
+    always @* begin
+        for (j = 0; j < ND; j++) begin
+            host_avn_readdata_temp = host_avn_readdata_temp | (devices_avn_readdata[j] & {DW{prev_devices_hit[j]}});
+        end
+    end
 
     always @(posedge clk) begin
         prev_devices_hit <= devices_hit;
     end
 
-    assign host_avn_waitrequest = | (devices_avn_waitrequest & devices_hit);
+
 
 
 endmodule
