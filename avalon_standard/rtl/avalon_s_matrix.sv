@@ -84,7 +84,7 @@ module avalon_s_matrix #(
 
     genvar h;
     generate
-        for (h = 0; h < NH; h++) begin: host_decode
+        for (h = 0; h < NH; h++) begin
             avalon_s_decoder #(.ND(ND), .DW(DW), .AW (AW))
             u_avalon_s_decoder (
                 .clk                        (clk),
@@ -112,7 +112,7 @@ module avalon_s_matrix #(
 
     genvar d;
     generate
-        for (d = 0; d < NH; d++) begin: host_arbiter
+        for (d = 0; d < NH; d++) begin
             avalon_s_arbiter #(.NH(NH), .DW(DW), .AW (AW))
             u_avalon_s_arbiter (
                 .clk                        (clk),

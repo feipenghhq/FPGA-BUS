@@ -64,7 +64,7 @@ module avalon_s_arbiter #(
         for (i = 0; i < NH; i++) begin
             // connect output to input
             assign hosts_avn_readdata[i] = device_avn_readdata;
-            assign hosts_avn_waitrequest[i] = device_avn_waitrequest;
+            assign hosts_avn_waitrequest[i] = device_avn_waitrequest | ~hosts_grant[i];
             assign device_avn_read = |(hosts_grant & hosts_avn_read);
             assign device_avn_write = |(hosts_grant & hosts_avn_write);
         end
@@ -72,6 +72,9 @@ module avalon_s_arbiter #(
 
     integer j;
     always @* begin
+        device_avn_address_temp = 0;
+        device_avn_writedata_temp = 0;
+        device_avn_byte_enable_temp = 0;
         for (j = 0; j < NH; j++) begin
             device_avn_address_temp = device_avn_address_temp | (hosts_avn_address[j] & {AW{hosts_grant[j]}});
             device_avn_writedata_temp = device_avn_writedata_temp | (hosts_avn_writedata[j] & {AW{hosts_grant[j]}});

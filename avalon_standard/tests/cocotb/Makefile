@@ -13,7 +13,8 @@ VERILOG_SOURCES += $(GIT_ROOT)/common/rtl/bus_arbiter.sv
 VERILOG_SOURCES += $(GIT_ROOT)/avalon_standard/rtl/avalon_s_arbiter.sv
 VERILOG_SOURCES += $(GIT_ROOT)/avalon_standard/rtl/avalon_s_decoder.sv
 VERILOG_SOURCES += $(GIT_ROOT)/avalon_standard/rtl/avalon_s_matrix.sv
-TOPLEVEL = avalon_s_matrix
+VERILOG_SOURCES += $(PWD)/tb.sv
+TOPLEVEL = tb
 
 MODULE = test
 
