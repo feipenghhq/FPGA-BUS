@@ -117,6 +117,6 @@ module tb #(
     assign devices_avn_readdata[1] = device1_avn_readdata;
     assign devices_avn_waitrequest[1] = device1_avn_waitrequest;
 
-    avalon_s_matrix #(.NH(NH),.ND(ND),.DW(DW),.AW(AW)) DUT (.*);
+    avalon_s_crossbar #(.NH(NH),.ND(ND),.DW(DW),.AW(AW)) DUT (.*);
 
 endmodule

@@ -6,11 +6,11 @@
 // ------------------------------------------------------------------------------------------------
 // Avalon Standard Bus
 // ------------------------------------------------------------------------------------------------
-// Avalon bus matrix
+// Avalon bus crossbar
 // ------------------------------------------------------------------------------------------------
 
 
-module avalon_s_matrix #(
+module avalon_s_crossbar #(
     parameter NH = 2,   // number of host
     parameter ND = 2,   // number of device
     parameter DW = 32,  // data width
@@ -68,23 +68,23 @@ module avalon_s_matrix #(
 
     genvar i, j;
     generate
-        for (i = 0; i < ND; i++) begin  // device
-            for (j = 0; j < NH; j++) begin // host
+        for (i = 0; i < ND; i++) begin: device  // device
+            for (j = 0; j < NH; j++) begin: host // host
                 assign arbiter_avn_read[i][j]         = decoder_avn_read[j][i];
                 assign arbiter_avn_write[i][j]        = decoder_avn_write[j][i];
                 assign arbiter_avn_address[i][j]      = decoder_avn_address[j][i];
                 assign arbiter_avn_byte_enable[i][j]  = decoder_avn_byte_enable[j][i];
                 assign arbiter_avn_writedata[i][j]    = decoder_avn_writedata[j][i];
 
-                assign decoder_avn_readdata[i][j]     = arbiter_avn_readdata[j][i];
-                assign decoder_avn_waitrequest[i][j]  = arbiter_avn_waitrequest[j][i];
+                assign decoder_avn_readdata[j][i]     = arbiter_avn_readdata[i][j];
+                assign decoder_avn_waitrequest[j][i]  = arbiter_avn_waitrequest[i][j];
             end
         end
     endgenerate
 
     genvar h;
     generate
-        for (h = 0; h < NH; h++) begin
+        for (h = 0; h < NH; h++) begin: decoder_inst
             avalon_s_decoder #(.ND(ND), .DW(DW), .AW (AW))
             u_avalon_s_decoder (
                 .clk                        (clk),
@@ -112,7 +112,7 @@ module avalon_s_matrix #(
 
     genvar d;
     generate
-        for (d = 0; d < NH; d++) begin
+        for (d = 0; d < ND; d++) begin: arbiter_inst
             avalon_s_arbiter #(.NH(NH), .DW(DW), .AW (AW))
             u_avalon_s_arbiter (
                 .clk                        (clk),

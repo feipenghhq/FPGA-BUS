@@ -12,7 +12,7 @@ TOPLEVEL_LANG ?= verilog
 VERILOG_SOURCES += $(GIT_ROOT)/common/rtl/bus_arbiter.sv
 VERILOG_SOURCES += $(GIT_ROOT)/avalon_standard/rtl/avalon_s_arbiter.sv
 VERILOG_SOURCES += $(GIT_ROOT)/avalon_standard/rtl/avalon_s_decoder.sv
-VERILOG_SOURCES += $(GIT_ROOT)/avalon_standard/rtl/avalon_s_matrix.sv
+VERILOG_SOURCES += $(GIT_ROOT)/avalon_standard/rtl/avalon_s_crossbar.sv
 VERILOG_SOURCES += $(PWD)/tb.sv
 TOPLEVEL = tb
 

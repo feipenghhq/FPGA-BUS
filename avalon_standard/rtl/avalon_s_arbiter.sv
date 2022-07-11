@@ -58,15 +58,15 @@ module avalon_s_arbiter #(
     assign device_avn_address = device_avn_address_temp;
     assign device_avn_byte_enable = device_avn_byte_enable_temp;
     assign device_avn_writedata = device_avn_writedata_temp;
+    assign device_avn_read = |(hosts_grant & hosts_avn_read);
+    assign device_avn_write = |(hosts_grant & hosts_avn_write);
 
     genvar i;
     generate
-        for (i = 0; i < NH; i++) begin
+        for (i = 0; i < NH; i++) begin: d2h
             // connect output to input
             assign hosts_avn_readdata[i] = device_avn_readdata;
             assign hosts_avn_waitrequest[i] = device_avn_waitrequest | ~hosts_grant[i];
-            assign device_avn_read = |(hosts_grant & hosts_avn_read);
-            assign device_avn_write = |(hosts_grant & hosts_avn_write);
         end
     endgenerate
 
