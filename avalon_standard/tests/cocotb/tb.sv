@@ -54,10 +54,8 @@ module tb #(
     input               device1_avn_waitrequest,
 
     // address range for each device
-    input  [AW-1:0]     device0_address_low,
-    input  [AW-1:0]     device0_address_high,
-    input  [AW-1:0]     device1_address_low,
-    input  [AW-1:0]     device1_address_high
+    input  [AW-1:0]     device_address_low[1:0],
+    input  [AW-1:0]     device_address_high[1:0]
 );
 
     logic [ND-1:0][AW-1:0]     devices_address_low;
@@ -80,10 +78,10 @@ module tb #(
     logic [ND-1:0][DW-1:0]     devices_avn_readdata;
     logic [ND-1:0]             devices_avn_waitrequest;
 
-    assign devices_address_low[0] = device0_address_low;
-    assign devices_address_high[0] = device0_address_high;
-    assign devices_address_low[1] = device1_address_low;
-    assign devices_address_high[1] = device1_address_high;
+    assign devices_address_low[0] = device_address_low[0];
+    assign devices_address_high[0] = device_address_high[0];
+    assign devices_address_low[1] = device_address_low[1];
+    assign devices_address_high[1] = device_address_high[1];
 
     assign hosts_avn_read[0] = host0_avn_read;
     assign hosts_avn_write[0] = host0_avn_write;

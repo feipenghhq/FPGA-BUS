@@ -10,63 +10,49 @@
 # ------------------------------------------------------------------------------------------------
 
 from collections import deque
-
+import random
+import os
 import cocotb
-from cocotb.clock import Clock
-from cocotb.triggers import RisingEdge, Timer
-from env import Env
+from testbench import test_single_host
 
 # ----------------------------------------------------------------
 
-async def test_host_util(dut, base, host, mon):
-    """ Test single host to single device """
-    await host.write(base+0x10000000, 0xbeefcafe)
-    await host.write(base+0x20000000, 0xdeadbeef)
-    await host.write(base+0x0, 0x11223344)
-    await host.write(base+0x3FFFFFFF, 0x55667788)
-    await host.read(base+0x10000000)
-    await host.read(base+0x20000000)
-    await host.read(base+0x0)
-    await host.read(base+0x3FFFFFFF)
-    await Timer(100, units="ns")
-    # check result
-    for i in range(4):
-        host_pkt = host.queue.popleft()
-        device_pkt = mon.recvQ.popleft()
-        error_msg = f"\nID: {i+1} \nhost:   {host_pkt} \ndevice: {device_pkt}"
-        assert host_pkt == device_pkt, error_msg
+if 'size' in os.environ:
+    size = int(os.environ['size'])
+else:
+    size = 10
 
 @cocotb.test()
 async def test_host0_device0(dut):
-    env = Env(dut)
-    await env.clock_gen()
-    await env.reset_gen()
-    base = 0x0
-    await test_host_util(dut, base, env.host0_driver, env.device0_mon)
+    await test_single_host(dut, 0x0, 0, 0, size=size)
 
 @cocotb.test()
 async def test_host0_device1(dut):
-    env = Env(dut)
-    await env.clock_gen()
-    await env.reset_gen()
-    base = 0x40000000
-    await test_host_util(dut, base, env.host0_driver, env.device1_mon)
+    await test_single_host(dut, 0x40000000, 0, 1, size=size)
 
 @cocotb.test()
 async def test_host1_device0(dut):
-    env = Env(dut)
-    await env.clock_gen()
-    await env.reset_gen()
-    base = 0x0
-    await test_host_util(dut, base, env.host1_driver, env.device0_mon)
+    await test_single_host(dut, 0x0, 1, 0, size=size)
 
 @cocotb.test()
 async def test_host1_device1(dut):
-    env = Env(dut)
-    await env.clock_gen()
-    await env.reset_gen()
-    base = 0x40000000
-    await test_host_util(dut, base, env.host1_driver, env.device1_mon)
+    await test_single_host(dut, 0x40000000, 1, 1, size=size)
+
+@cocotb.test()
+async def test_host0_device0_wait(dut):
+    await test_single_host(dut, 0x0, 0, 0, WaitReq=True, size=size)
+
+@cocotb.test()
+async def test_host0_device1_wait(dut):
+    await test_single_host(dut, 0x40000000, 0, 1, WaitReq=True, size=size)
+
+@cocotb.test()
+async def test_host1_device0_wait(dut):
+    await test_single_host(dut, 0x0, 1, 0, WaitReq=True, size=size)
+
+@cocotb.test()
+async def test_host1_device1_wait(dut):
+    await test_single_host(dut, 0x40000000, 1, 1, WaitReq=True, size=size)
 
 # ----------------------------------------------------------------
 
@@ -95,31 +81,31 @@ async def test_host_util_1(dut, host0, host1, base0, base1, mon0, mon1):
         error_msg = f"\nID: {i+1} \nhost:   {host_pkt1} \ndevice: {device_pkt1}"
         assert host_pkt1 == device_pkt1, error_msg
 
-@cocotb.test()
+#@cocotb.test()
 async def test_host_to_diff_device_0(dut):
     """ Test multiple host to different device at the same time
         host 0 -> device 0
         host 1 -> device 1
     """
-    env = Env(dut)
+    env = Env(dut, 2, 2)
     await env.clock_gen()
     await env.reset_gen()
     base0 = 0x0
     base1 = 0x40000000
-    await test_host_util_1(dut, env.host0_driver, env.host1_driver, base0, base1, env.device0_mon, env.device1_mon)
+    await test_host_util_1(dut, env.drivers[0], env.drivers[1], base0, base1, env.devices[0], env.devices[1])
 
-@cocotb.test()
+#@cocotb.test()
 async def test_host_to_diff_device_1(dut):
     """ Test multiple host to different device at the same time
         host 0 -> device 1
         host 1 -> device 0
     """
-    env = Env(dut)
+    env = Env(dut, 2, 2)
     await env.clock_gen()
     await env.reset_gen()
     base0 = 0x40000000
     base1 = 0x0
-    await test_host_util_1(dut, env.host0_driver, env.host1_driver, base0, base1, env.device1_mon, env.device0_mon)
+    await test_host_util_1(dut, env.drivers[0], env.drivers[1], base0, base1, env.devices[1], env.devices[0])
 
 # ----------------------------------------------------------------
 
@@ -142,28 +128,28 @@ async def test_host_util_2(dut, host0, host1, base, mon):
         error_msg = f"\nID: {i+1} \nhost:   {host_pkt1} \ndevice: {device_pkt1}"
         assert host_pkt1 == device_pkt1, error_msg
 
-@cocotb.test()
+#@cocotb.test()
 async def test_host_to_same_device_0(dut):
     """ Test multiple host to same device at the same time
         host 0 -> device 0
         host 1 -> device 0
     """
-    env = Env(dut)
+    env = Env(dut, 2, 2)
     await env.clock_gen()
     await env.reset_gen()
     base = 0
-    await test_host_util_2(dut, env.host0_driver, env.host1_driver, base, env.device0_mon)
+    await test_host_util_2(dut, env.drivers[0], env.drivers[1], base, env.devices[0])
     await Timer(100, units="ns")
 
-@cocotb.test()
+#@cocotb.test()
 async def test_host_to_same_device_1(dut):
     """ Test multiple host to same device at the same time
         host 0 -> device 1
         host 1 -> device 1
     """
-    env = Env(dut)
+    env = Env(dut, 2, 2)
     await env.clock_gen()
     await env.reset_gen()
     base = 0x40000000
-    await test_host_util_2(dut, env.host0_driver, env.host1_driver, base, env.device1_mon)
+    await test_host_util_2(dut, env.drivers[0], env.drivers[1], base, env.devices[1])
     await Timer(100, units="ns")

@@ -10,11 +10,10 @@
 # ------------------------------------------------------------------------------------------------
 
 from collections import deque
-
 import cocotb
-from AvalonSMonitor import AvalonSPacket
+from AvalonSPacket import AvalonSPacket
 
-class hostDriver():
+class AvalonSDriver():
 
     def __init__(self, port):
         self.port = port
@@ -26,7 +25,7 @@ class hostDriver():
         await self.port.write(address, data)
         packet = AvalonSPacket(address, 0, 1, data)
         self.queue.append(packet)
-        cocotb.top._log.info("Sending request: " + str(packet))
+        cocotb.top._log.debug("Sending request: " + str(packet))
 
     async def read(self, address):
         data = await self.port.read(address)

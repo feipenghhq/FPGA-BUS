@@ -40,8 +40,13 @@ module avalon_s_arbiter #(
     // Sginal Declaration
     // ------------------------------
 
-    logic [NH-1:0]      hosts_grant;
+    reg                 pending;
+    reg [NH-1:0]        pending_hosts_request;
+
+    logic [NH-1:0]      grant;
     logic [NH-1:0]      hosts_request;
+    logic [NH-1:0]      arbiter_request;
+    logic               host_request;
 
     /* verilator lint_off UNOPT */
     logic [AW-1:0]      device_avn_address_temp;
@@ -54,19 +59,33 @@ module avalon_s_arbiter #(
     // ------------------------------
 
     assign hosts_request = hosts_avn_read | hosts_avn_write;
+    assign host_request = |hosts_request;
+    assign arbiter_request = pending ? pending_hosts_request : hosts_request;
+
+    always @(posedge clk) begin
+        if (rst) pending <= 0;
+        else begin
+            if (!pending && host_request && device_avn_waitrequest) pending <= 1;
+            else if (pending && !device_avn_waitrequest) pending <= 0;
+        end
+    end
+
+    always @(posedge clk) begin
+        if (!pending) pending_hosts_request <= hosts_request;
+    end
 
     assign device_avn_address = device_avn_address_temp;
     assign device_avn_byte_enable = device_avn_byte_enable_temp;
     assign device_avn_writedata = device_avn_writedata_temp;
-    assign device_avn_read = |(hosts_grant & hosts_avn_read);
-    assign device_avn_write = |(hosts_grant & hosts_avn_write);
+    assign device_avn_read = |(grant & hosts_avn_read);
+    assign device_avn_write = |(grant & hosts_avn_write);
 
     genvar i;
     generate
         for (i = 0; i < NH; i++) begin: d2h
             // connect output to input
             assign hosts_avn_readdata[i] = device_avn_readdata;
-            assign hosts_avn_waitrequest[i] = device_avn_waitrequest | ~hosts_grant[i];
+            assign hosts_avn_waitrequest[i] = device_avn_waitrequest | ~grant[i];
         end
     endgenerate
 
@@ -76,9 +95,9 @@ module avalon_s_arbiter #(
         device_avn_writedata_temp = 0;
         device_avn_byte_enable_temp = 0;
         for (j = 0; j < NH; j++) begin
-            device_avn_address_temp = device_avn_address_temp | (hosts_avn_address[j] & {AW{hosts_grant[j]}});
-            device_avn_writedata_temp = device_avn_writedata_temp | (hosts_avn_writedata[j] & {AW{hosts_grant[j]}});
-            device_avn_byte_enable_temp = device_avn_byte_enable_temp | (hosts_avn_byte_enable[j] & {(DW/8){hosts_grant[j]}});
+            device_avn_address_temp = device_avn_address_temp | (hosts_avn_address[j] & {AW{grant[j]}});
+            device_avn_writedata_temp = device_avn_writedata_temp | (hosts_avn_writedata[j] & {AW{grant[j]}});
+            device_avn_byte_enable_temp = device_avn_byte_enable_temp | (hosts_avn_byte_enable[j] & {(DW/8){grant[j]}});
         end
     end
 
@@ -88,9 +107,9 @@ module avalon_s_arbiter #(
 
     bus_arbiter #(.WIDTH(NH))
     u_bus_arbiter (
-        .req    (hosts_request),
-        .base   ('b1),
-        .grant  (hosts_grant)
+        .req    (arbiter_request),
+        .base   (1),
+        .grant  (grant)
     );
 
 endmodule
